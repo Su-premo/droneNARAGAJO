@@ -283,11 +283,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         btnRaiseAltitude = (Button) findViewById(R.id.btnRaiseAltitude);
         btnLowerAltitude = (Button) findViewById(R.id.btnLowerAltitude);
 
-        mapButton = (Button) findViewById(R.id.mapButton);
-        btnMapBasic = (Button) findViewById(R.id.btnMapBasic);
-        btnMapSatellite = (Button) findViewById(R.id.btnMapSatellite);
-        btnMapTerrain = (Button) findViewById(R.id.btnMapTerrain);
-        btnMapCadastral = (Button) findViewById(R.id.btnMapCadastral);
         btnMapLock = (Button) findViewById(R.id.btnMapLock);
         resetOverlaysBtn = (Button) findViewById(R.id.btn_resetOverlays);
 
@@ -299,7 +294,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         btnNarrowPathWidthDown = (Button) findViewById(R.id.btnDownPathWidth);
         btnMission = (Button) findViewById(R.id.btnMission);
         btnMissionAB = (Button) findViewById(R.id.btnAB);
-        btnMissionPolygon = (Button) findViewById(R.id.btnMissionPolygon);
         btnMissionUndo = (Button) findViewById(R.id.btnMissionUndo);
         btnSetMission = (Button) findViewById(R.id.btnSetMission);
         btnSetAB = (Button) findViewById(R.id.btnSetAB);
@@ -845,95 +839,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
     }
 
-    // Buttons to set the map type
-    public void mapButton(View view) {
-        if (btnMapBasic.getVisibility() == View.INVISIBLE && btnMapSatellite.getVisibility() == View.INVISIBLE && btnMapTerrain.getVisibility() == View.INVISIBLE) {
-            btnMapBasic.setVisibility(View.VISIBLE);
-            btnMapSatellite.setVisibility(View.VISIBLE);
-            btnMapTerrain.setVisibility(View.VISIBLE);
-        } else {
-            btnMapBasic.setVisibility(View.INVISIBLE);
-            btnMapSatellite.setVisibility(View.INVISIBLE);
-            btnMapTerrain.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    public void btnMapBasic(View view) {
-        naverMap.setMapType(NaverMap.MapType.Basic);
-        mapButton.setText("Basic");
-    }
-
-    public void btnMapSatellite(View view) {
-        naverMap.setMapType(NaverMap.MapType.Satellite);
-        mapButton.setText("Satellite");
-    }
-
-    public void btnMapTerrain(View view) {
-        naverMap.setMapType(NaverMap.MapType.Terrain);
-        mapButton.setText("Terrain");
-    }
-
-    // options: MapLock, Cadastral and reset all overlays
-    public void optionButton(View view) {
-        if (btnMapLock.getVisibility() == View.INVISIBLE && btnMapCadastral.getVisibility() == View.INVISIBLE && resetOverlaysBtn.getVisibility() == View.INVISIBLE) {
-            btnMapLock.setVisibility(View.VISIBLE);
-            btnMapCadastral.setVisibility(View.VISIBLE);
-            resetOverlaysBtn.setVisibility(View.VISIBLE);
-        } else {
-            btnMapLock.setVisibility(View.INVISIBLE);
-            btnMapCadastral.setVisibility(View.INVISIBLE);
-            resetOverlaysBtn.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    // tap button for cadastral map type (on/off)
-    public void btnMapCadastral(View view) {
-        if (naverMap.isLayerGroupEnabled(NaverMap.LAYER_GROUP_CADASTRAL)) {
-            naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_CADASTRAL, false);
-            btnMapCadastral.setText("Cadastral\nOFF");
-        } else {
-            naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_CADASTRAL, true);
-            btnMapCadastral.setText("Cadastral\nON");
-        }
-    }
-
-    // tap button for locking map camera on drone location marker
-    public void btnMapLock(View view) {
-        if (btnMapLock.getText().equals("Map Lock\nON")) {
-            final Handler handlerTimerMapLock = new Handler() {
-                public void handleMessage(Message message) {
-                    Gps droneGps = drone.getAttribute(AttributeType.GPS);
-                    LatLong vehiclePosition = droneGps.getPosition();
-
-                    CameraUpdate cameraFollowsDrone = CameraUpdate.scrollTo(castToLatLng(vehiclePosition));
-                    //CameraUpdate cameraFollowsDrone = CameraUpdate.scrollTo(new LatLng(35.9461, 126.6822));
-                    naverMap.moveCamera(cameraFollowsDrone);
-                    btnMapLock.setText("Map Lock\nOFF");
-                }
-            };
-            timerMapLock = new Timer(true);
-            timerTaskMapLock = new TimerTask() {
-                @Override
-                public void run() {
-                    Log.v(TAG, "timer run");
-                    Message message = handlerTimerMapLock.obtainMessage();
-                    handlerTimerMapLock.sendMessage(message);
-                }
-
-                @Override
-                public boolean cancel() {
-                    Log.v(TAG, "timer cancel");
-                    return super.cancel();
-
-                }
-            };
-            timerMapLock.schedule(timerTaskMapLock, 0, 4000);
-        } else {
-            timerMapLock.cancel();
-            timerMapLock = null;
-            btnMapLock.setText("Map Lock\nON");
-        }
-    }
 
     public void recyclerViewMessage() {
 
@@ -977,13 +882,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         aFlag = false;
         bFlag = false;
         resetOverlaysBtn(view);
-        polygonFlag = false;
     }
 
     // Tap A-B button: the button for setting A,B markers and the missions show up
     public void buttonAB(View view) {
         if (btnSetAB.getVisibility() == View.INVISIBLE) {
-            polygonFlag = false;
             btnSetAB.setVisibility(View.VISIBLE);
             btnMission.setText("A-B");
             btnSetAB.setText("Set A");
@@ -1153,11 +1056,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
-    public void missionPolygon(View view) {
-        polygonFlag = true;
-        btnMission.setText("Polygon");
-    }
-
     public void resetOverlaysBtn(View view) {
         markerGuideModeLC.setMap(null);
         polylineDroneAL.clear();
@@ -1171,16 +1069,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         latlngsAllForPolylineAL.clear();
         polylineABmission.setMap(null);
 
-        polygonForMission.setMap(null);
-        markersForPolygonAL.clear();
-        markersLatlngForPolygonAL.clear();
-
-        polygonBoundary.setMap(null);
-        leftLatlngsBoundsAL.clear();
-        rightLatlngsBoundsAL.clear();
-        allLatlngsBoundsAL.clear();
         polyline.setMap(null);
     }
+    //조난자 위치 좌표
+//      public void markerOfCastaway() {
+//        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+//        LatLong vehiclePosition = droneGps.getPosition();
+//        if (aFlag == false && bFlag == false) {
+//            markerA.setPosition(castToNaverCoord(vehiclePosition));
 
     @Override
     public void onDroneServiceInterrupted(String errorMsg) {
@@ -1244,233 +1140,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             preMarkers.setHeight(50);
             preMarkers.setMap(naverMap);
             preMarkerLatlng = LatLng;
-
-            // polygon mission
-            if (polygonFlag == true) {
-                markersForPolygonAL.add(preMarkers);
-                markersLatlngForPolygonAL.add(preMarkers.getPosition());
-
-                if (markersForPolygonAL.size() > 2) {
-                    LatLngBounds boundsIncludePolygon = new LatLngBounds.Builder().include(markersLatlngForPolygonAL).build();
-                    centroidBounds = castToLatLong(boundsIncludePolygon.getCenter());
-                    degreeSortingPolygonAL.clear();
-                    cardinalPointsOfBoundsAL.clear();
-                    leftLatlngsBoundsAL.clear();
-                    rightLatlngsBoundsAL.clear();
-                    allLatlngsBoundsAL.clear();
-                    latlngsIntersectionAL.clear();
-                    finalIntersectionAL.clear();
-                    polyline.setMap(null);
-                    for (int i = 0; i < markersLatlngForPolygonAL.size(); i++) {
-                        degreeSortingPolygonAL.add(i, mathUtils.getHeadingFromCoordinates(centroidBounds, castToLatLong(markersLatlngForPolygonAL.get(i))));
-                    }
-                    for (int i = 0; i < markersLatlngForPolygonAL.size() - 1; i++) {
-                        for (int j = i + 1; j < markersLatlngForPolygonAL.size(); j++) {
-                            if (degreeSortingPolygonAL.get(i) > degreeSortingPolygonAL.get(j)) {
-                                Collections.swap(degreeSortingPolygonAL, i, j);
-                                Collections.swap(markersLatlngForPolygonAL, i, j);
-                            }
-                        }
-                    }
-                    polygonForMission.setCoords(markersLatlngForPolygonAL);
-                    polygonForMission.setColor(Color.TRANSPARENT);
-                    polygonForMission.setOutlineColor(Color.MAGENTA);
-                    polygonForMission.setOutlineWidth(3);
-                    polygonForMission.setMap(naverMap);
-
-                    // find the polygon's longest side and its degree
-                    distanceStdPolygon = mathUtils.getDistance2D(new LatLong(markersLatlngForPolygonAL.get(0).latitude, markersLatlngForPolygonAL.get(0).longitude),
-                            new LatLong(markersLatlngForPolygonAL.get(markersLatlngForPolygonAL.size() - 1).latitude, markersLatlngForPolygonAL.get(markersLatlngForPolygonAL.size() - 1).longitude));
-                    int aOfLongestSide = 0;
-                    int bOfLongestSide = markersLatlngForPolygonAL.size() - 1;
-                    for (int i = 1; i < markersLatlngForPolygonAL.size(); i++) {
-                        distancesPolygon = mathUtils.getDistance2D(new LatLong(markersLatlngForPolygonAL.get(i).latitude, markersLatlngForPolygonAL.get(i).longitude),
-                                new LatLong(markersLatlngForPolygonAL.get(i - 1).latitude, markersLatlngForPolygonAL.get(i - 1).longitude));
-
-                        if (distancesPolygon >= distanceStdPolygon) {
-                            distanceStdPolygon = distancesPolygon;
-                            aOfLongestSide = i;
-                            bOfLongestSide = i - 1;
-
-                            degreeLongestSide = mathUtils.getHeadingFromCoordinates(new LatLong(markersLatlngForPolygonAL.get(aOfLongestSide).latitude, markersLatlngForPolygonAL.get(aOfLongestSide).longitude),
-                                    new LatLong(markersLatlngForPolygonAL.get(bOfLongestSide).latitude, markersLatlngForPolygonAL.get(bOfLongestSide).longitude));
-                        }
-                    }
-
-                    // the centroid of polygon
-                    Double sumLat = 0.0, sumLng = 0.0;
-                    for (int i = 0; i < markersLatlngForPolygonAL.size(); i++) {
-                        sumLat += markersLatlngForPolygonAL.get(i).latitude;
-                        sumLng += markersLatlngForPolygonAL.get(i).longitude;
-                    }
-                    sumLat /= markersLatlngForPolygonAL.size();
-                    sumLng /= markersLatlngForPolygonAL.size();
-
-                    Marker centroidPolygon = new Marker();
-                    centroidPolygon.setPosition(new LatLng(sumLat, sumLng));
-                    //markerTemp.setMap(naverMap);
-
-                    // 135, 225, 315, 45 degrees(cardinal points)
-                    ArrayList<LatLng> markerBoundsAL = new ArrayList<>();
-                    for (int i = 0; i < 4; i++) {
-                        markerTemp.setPosition(castToLatLng(mathUtils.newCoordFromBearingAndDistance(castToLatLong(centroidPolygon.getPosition()),
-                                degreeLongestSide + 45 + 90 * i, distanceStdPolygon * 2)));
-                        markerBoundsAL.add(markerTemp.getPosition());
-                    }
-                    Double distanceBounds = 0.0;
-                    distanceBounds = mathUtils.getDistance2D(castToLatLong(markerBoundsAL.get(0)), castToLatLong(markerBoundsAL.get(1)));
-                    for (int i = 0; mPathWidth * i <= distanceBounds; i++) {
-                        leftLatlngsBoundsAL.add(castToLatLng(mathUtils.newCoordFromBearingAndDistance(castToLatLong(markerBoundsAL.get(0)),
-                                degreeLongestSide + 270, mPathWidth * i)));
-                    }
-                    for (int i = 0; mPathWidth * i <= distanceBounds; i++) {
-                        rightLatlngsBoundsAL.add(castToLatLng(mathUtils.newCoordFromBearingAndDistance(castToLatLong(markerBoundsAL.get(1)),
-                                degreeLongestSide + 270, mPathWidth * i)));
-                    }
-                    for (int i = 0; i <= distanceBounds / mPathWidth; i++) {
-                        if (i % 2 == 0) {
-                            allLatlngsBoundsAL.add(rightLatlngsBoundsAL.get(i));
-                            allLatlngsBoundsAL.add(leftLatlngsBoundsAL.get(i));
-                        } else {
-                            allLatlngsBoundsAL.add(leftLatlngsBoundsAL.get(i));
-                            allLatlngsBoundsAL.add(rightLatlngsBoundsAL.get(i));
-                        }
-                    }
-
-                    polygonBoundary.setCoords(markerBoundsAL);
-                    polygonBoundary.setColor(Color.TRANSPARENT);
-                    polygonBoundary.setOutlineColor(Color.LTGRAY);
-                    polygonBoundary.setOutlineWidth(5);
-                    polygonBoundary.setMap(naverMap);
-
-//                    polyline.setCoords(allLatlngsBoundsAL);
-//                    polyline.setMap(naverMap);
-
-                    // intersection point(교점) on Polygon
-                    Double Px = 0.0, Py = 0.0, P = 0.0;
-                    int count = 0;
-                    for (int i = 0; i < markersLatlngForPolygonAL.size() - 1; i++) {
-                        for (int j = 0; j < leftLatlngsBoundsAL.size(); j++) {
-                            Double x1 = markersLatlngForPolygonAL.get(i).latitude,
-                                    y1 = markersLatlngForPolygonAL.get(i).longitude,
-
-                                    x2 = markersLatlngForPolygonAL.get(i + 1).latitude,
-                                    y2 = markersLatlngForPolygonAL.get(i + 1).longitude,
-
-                                    x3 = leftLatlngsBoundsAL.get(j).latitude,
-                                    y3 = leftLatlngsBoundsAL.get(j).longitude,
-
-                                    x4 = rightLatlngsBoundsAL.get(j).latitude,
-                                    y4 = rightLatlngsBoundsAL.get(j).longitude;
-                            Px = ((x1 * y2) - (y1 * x2)) * (x3 - x4) - (x1 - x2) * ((x3 * y4) - (y3 * x4));
-                            Py = ((x1 * y2) - (y1 * x2)) * (y3 - y4) - (y1 - y2) * ((x3 * y4) - (y3 * x4));
-                            P = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-                            Px = Px / P;
-                            Py = Py / P;
-
-                            //latlngsIntersectionAL.add(new LatLng(Px, Py));
-                            if (x1 <= Px && x2 >= Px) {
-                                if (y1 <= Py && y2 >= Py) {
-                                    latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                    count++;
-                                } else if (y1 >= Py && y2 <= Py) {
-                                    latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                    count++;
-                                }
-                            } else if (x1 >= Px && x2 <= Px) {
-                                if (y1 <= Py && y2 >= Py) {
-                                    latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                    count++;
-                                } else if (y1 >= Py && y2 <= Py) {
-                                    latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                    count++;
-                                }
-                            }
-                        }
-                    }
-                    Log.d("intersection", latlngsIntersectionAL.toString());
-                    Log.d("left", leftLatlngsBoundsAL.toString());
-                    Log.d("right", rightLatlngsBoundsAL.toString());
-                    Log.d("markersPolygon", markersLatlngForPolygonAL.toString());
-
-                    for (int j = 0; j < leftLatlngsBoundsAL.size(); j++) {
-                        Double x1 = markersLatlngForPolygonAL.get(markersLatlngForPolygonAL.size() - 1).latitude,
-                                y1 = markersLatlngForPolygonAL.get(markersLatlngForPolygonAL.size() - 1).longitude,
-
-                                x2 = markersLatlngForPolygonAL.get(0).latitude,
-                                y2 = markersLatlngForPolygonAL.get(0).longitude,
-
-                                x3 = leftLatlngsBoundsAL.get(j).latitude,
-                                y3 = leftLatlngsBoundsAL.get(j).longitude,
-
-                                x4 = rightLatlngsBoundsAL.get(j).latitude,
-                                y4 = rightLatlngsBoundsAL.get(j).longitude;
-                        Px = ((x1 * y2) - (y1 * x2)) * (x3 - x4) - (x1 - x2) * ((x3 * y4) - (y3 * x4));
-                        Py = ((x1 * y2) - (y1 * x2)) * (y3 - y4) - (y1 - y2) * ((x3 * y4) - (y3 * x4));
-                        P = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-                        Px = Px / P;
-                        Py = Py / P;
-
-                        if (x1 <= Px && x2 >= Px) {
-                            if (y1 <= Py && y2 >= Py) {
-                                latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                count++;
-                            } else if (y1 >= Py && y2 <= Py) {
-                                latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                count++;
-                            }
-                        } else if (x1 >= Px && x2 <= Px) {
-                            if (y1 <= Py && y2 >= Py) {
-                                latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                count++;
-                            } else if (y1 >= Py && y2 <= Py) {
-                                latlngsIntersectionAL.add(count, new LatLng(Px, Py));
-                                count++;
-                            }
-                        }
-                    }
-
-
-                    // sort for inner Polyline by CCW
-//                    for (int i = 0; i < latlngsIntersectionAL.size(); i++) {
-//                        degreeIntersectionAL.add(i, mathUtils.getHeadingFromCoordinates(centroidBounds, castToLatLong(latlngsIntersectionAL.get(i))));
-//                    }
-//
-//                    for (int i = 0; i < latlngsIntersectionAL.size() - 1; i++) {
-//                        for (int j = i + 1; j < latlngsIntersectionAL.size(); j++) {
-//                            if (degreeIntersectionAL.get(i) > degreeIntersectionAL.get(j)) {
-//                                Collections.swap(degreeIntersectionAL, j, i);
-//                                Collections.swap(latlngsIntersectionAL, j, i);
-//                            }
-//                        }
-//                    }
-
-
-                    // draw polyline within polygon mission
-                    int cycle = 0;
-                    for (int i = 0; i < latlngsIntersectionAL.size(); i++) {
-                        if (i < latlngsIntersectionAL.size() * 0.5) {
-                            if (i % 4 == 0) {
-                                finalIntersectionAL.add(latlngsIntersectionAL.get(2 * cycle));
-                            } else if (i % 4 == 1) {
-                                finalIntersectionAL.add(latlngsIntersectionAL.get(latlngsIntersectionAL.size() - 1 - 2 * cycle));
-                            } else if (i % 4 == 2) {
-                                finalIntersectionAL.add(latlngsIntersectionAL.get(latlngsIntersectionAL.size() - 2 - 2 * cycle));
-                            } else if (i % 4 == 3) {
-                                finalIntersectionAL.add(latlngsIntersectionAL.get(2 * cycle + 1));
-                                cycle++;
-                            }
-                        }
-                    }
-                    Log.d("finalintersec", finalIntersectionAL.toString());
-
-                    polyline.setCoords(finalIntersectionAL);
-                    polyline.setMap(naverMap);
-
-                }
-            }
         });
     }
 
