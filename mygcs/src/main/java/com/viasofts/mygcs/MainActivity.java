@@ -283,7 +283,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         btnRaiseAltitude = (Button) findViewById(R.id.btnRaiseAltitude);
         btnLowerAltitude = (Button) findViewById(R.id.btnLowerAltitude);
 
-        btnMapLock = (Button) findViewById(R.id.btnMapLock);
         resetOverlaysBtn = (Button) findViewById(R.id.btn_resetOverlays);
 
         btnPathDistance = (Button) findViewById(R.id.btnPathDistance);
