@@ -40,6 +40,8 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
 
+
+
     <android.support.constraint.ConstraintLayout
         android:id="@+id/telemetryInfo"
         android:layout_width="match_parent"
@@ -264,18 +266,30 @@
 
     <Button
         android:id="@+id/btn_resetOverlays"
-        android:layout_width="62dp"
-        android:layout_height="42dp"
+        android:layout_width="89dp"
+        android:layout_height="43dp"
         android:onClick="resetOverlaysBtn"
         android:text="Reset"
         android:textSize="9dp"
         android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="@+id/btnArm"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.783"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toTopOf="@+id/map"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.961"  />
+
+
+    <Button
+        android:id="@+id/guidedHomeBtn"
+        android:layout_width="89dp"
+        android:layout_height="35dp"
+        android:layout_marginEnd="142dp"
+        android:layout_marginBottom="12dp"
+        android:text="Return Home"
+        android:textSize="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_resetOverlays"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
         android:id="@+id/btnSetMission"

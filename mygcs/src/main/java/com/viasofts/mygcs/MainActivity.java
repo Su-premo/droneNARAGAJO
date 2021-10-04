@@ -100,7 +100,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private FusedLocationSource locationSource;
     private NaverMap naverMap;
     private Marker markerTemp = new Marker();
-    private PolylineOverlay polyline = new PolylineOverlay();
 
     private Button btnConnect;
     private Button mBtnSetConnectionType;
@@ -148,7 +147,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     private Button btnMission;
     private Button btnMissionAB;
-    private Button btnMissionPolygon;
     private Button btnMissionUndo;
     private Marker preMarkers = new Marker();
     private Marker markerA = new Marker();
@@ -161,38 +159,17 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     private MathUtils mathUtils = new MathUtils();
 
-    private Double degreeAB = 0.0;
-    private ArrayList<LatLng> latlngsBForPolylineAL = new ArrayList<>();
-    private ArrayList<LatLng> latlngsAForPolylineAL = new ArrayList<>();
-    private ArrayList<LatLng> latlngsAllForPolylineAL = new ArrayList<>();
-
     private Button btnSetMission;
     private Mission mission = new Mission();
     private Boolean missionSentFlag = false;
     private Boolean missionStartFlag = false;
 
-    private ArrayList<Marker> markersForPolygonAL = new ArrayList<>();
-    private Boolean polygonFlag = false;
-    private ArrayList<LatLng> markersLatlngForPolygonAL = new ArrayList<>();
-    private PolygonOverlay polygonForMission = new PolygonOverlay();
-    private ArrayList<Double> degreeSortingPolygonAL = new ArrayList<>();
-    private Double distanceStdPolygon = 0.0;
-    private Double distancesPolygon = 0.0;
-
-    private PolygonOverlay polygonBoundary = new PolygonOverlay();
-    private ArrayList<LatLng> cardinalPointsOfBoundsAL = new ArrayList<>();
-    private Double degreeLongestSide = 0.0;
-
-    private LatLong centroidBounds;
-
-    private PolygonOverlay testBounds = new PolygonOverlay();
-    private ArrayList<LatLng> leftLatlngsBoundsAL = new ArrayList<>();
-    private ArrayList<LatLng> rightLatlngsBoundsAL = new ArrayList<>();
-    private ArrayList<LatLng> allLatlngsBoundsAL = new ArrayList<>();
-
-    private ArrayList<LatLng> latlngsIntersectionAL = new ArrayList<>();
-    private ArrayList<Double> degreeIntersectionAL = new ArrayList<>();
-    private ArrayList<LatLng> finalIntersectionAL = new ArrayList<>();
+    // return home
+    private LatLong homePositionG;
+    private LatLng homePositionN;
+    private Boolean checkReturnHome = false;
+    private Marker homeMarker = new Marker();
+    private ArrayList<LatLng> missionArr = new ArrayList<>();
 
 
     @Override
@@ -397,11 +374,22 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 VehicleMode vehicleMode = vehicleState.getVehicleMode();
 
                 if (vehicleMode == vehicleMode.COPTER_GUIDED && checkGuideRun) {
-                    if (CheckGoal() == true) {
+                    if (checkGoal() == true) {
                         alertUser("Drone reached the guided point");
-                        ChangeToLoiterMode();
+                        changeToLoiterMode();
                         markerGuideModeLC.setMap(null);
                         checkGuideRun = false;
+                    }
+                }
+                if (vehicleMode == vehicleMode.COPTER_GUIDED && checkReturnHome) {
+                    if (checkBackHome() == true) {
+                        changeToLandMode(); // land
+                        alertUser("drone's at home position");
+                        checkReturnHome = false;
+                        homeMarker.setMap(null);
+                        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+                        LatLong vehiclePosition = droneGps.getPosition();
+                        Log.d("returnedHome", vehiclePosition.toString());
                     }
                 }
                 break;
@@ -740,6 +728,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         polylineFollowDrone.setCapType(PolylineOverlay.LineCap.Round);
         polylineFollowDrone.setJoinType(PolylineOverlay.LineJoin.Round);
         polylineFollowDrone.setMap(naverMap);
+
+        homePositionG = new LatLong(polylineDroneAL.get(0).latitude, polylineDroneAL.get(0).longitude);
+        homePositionN = polylineDroneAL.get(0);
     }
 
     // Send drone to guided point
@@ -754,7 +745,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     .setPositiveButton("확인", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            ChangeToGuidedMode();
+                            changeToGuidedMode();
                             goToGuidedPoint();
                         }
                     })
@@ -793,7 +784,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
     }
 
-    private void ChangeToGuidedMode() {
+    private void changeToGuidedMode() {
         VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
@@ -812,14 +803,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
     }
 
-    public boolean CheckGoal() {
-        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
-        LatLong vehiclePosition = droneGps.getPosition();
-        guidedPoint = new LatLng(markerGuideModeLC.getPosition().latitude, markerGuideModeLC.getPosition().longitude);
-        return guidedPoint.distanceTo(castToLatLng(vehiclePosition)) <= 1;
-    }
-
-    private void ChangeToLoiterMode() {
+    private void changeToLoiterMode() {
         VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_LOITER, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
@@ -838,6 +822,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
     }
 
+    public boolean checkGoal() {
+        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+        LatLong vehiclePosition = droneGps.getPosition();
+        guidedPoint = new LatLng(markerGuideModeLC.getPosition().latitude, markerGuideModeLC.getPosition().longitude);
+        return guidedPoint.distanceTo(castToLatLng(vehiclePosition)) <= 1;
+    }
 
     public void recyclerViewMessage() {
 
@@ -854,20 +844,16 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     // Buttons to set the map type
     public void MissionButton(View view) {
-        if (btnMissionAB.getVisibility() == View.INVISIBLE && btnMissionPolygon.getVisibility() == View.INVISIBLE && btnMissionUndo.getVisibility() == View.INVISIBLE) {
+        if (btnMissionAB.getVisibility() == View.INVISIBLE && btnMissionUndo.getVisibility() == View.INVISIBLE) {
             btnMissionAB.setVisibility(View.VISIBLE);
-            btnMissionPolygon.setVisibility(View.VISIBLE);
             btnMissionUndo.setVisibility(View.VISIBLE);
-            mBtnSetConnectionType.setVisibility(View.INVISIBLE);
 
             // remove zoom control(+/-)
             UiSettings uiSettings = naverMap.getUiSettings();
             uiSettings.setZoomControlEnabled(false);
         } else {
             btnMissionAB.setVisibility(View.INVISIBLE);
-            btnMissionPolygon.setVisibility(View.INVISIBLE);
             btnMissionUndo.setVisibility(View.INVISIBLE);
-            mBtnSetConnectionType.setVisibility(View.VISIBLE);
 
             UiSettings uiSettings = naverMap.getUiSettings();
             uiSettings.setZoomControlEnabled(true);
@@ -946,27 +932,38 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
 
     public void MissionABPolyline() {
-        // compute degree of a-b line
-        degreeAB = mathUtils.getHeadingFromCoordinates(castToLatLong(markerA.getPosition()), castToLatLong(markerB.getPosition()));
-        for (int j = 0; mPathWidth * j <= mPathDistance; j++) {
-            latlngsAForPolylineAL.add(castToLatLng(mathUtils.newCoordFromBearingAndDistance(castToLatLong(markerA.getPosition()), degreeAB + 90, mPathWidth * j)));
-            //Log.d("polyline", String.format("%f", mPathWidth*j));
-        }
-        for (int i = 0; mPathWidth * i <= mPathDistance; i++) {
-            latlngsBForPolylineAL.add(castToLatLng(mathUtils.newCoordFromBearingAndDistance(castToLatLong(markerB.getPosition()), degreeAB + 90, mPathWidth * i)));
-        }
-        for (int i = 0; i <= mPathDistance / mPathWidth; i++) {
-            if (i % 2 == 0) {
-                latlngsAllForPolylineAL.add(latlngsBForPolylineAL.get(i));
-                latlngsAllForPolylineAL.add(latlngsAForPolylineAL.get(i));
-            } else {
-                latlngsAllForPolylineAL.add(latlngsAForPolylineAL.get(i));
-                latlngsAllForPolylineAL.add(latlngsBForPolylineAL.get(i));
+        int missionCount = (int) (mPathDistance / mPathWidth) * 2 + 2;
+
+        double lineDistance = mathUtils.getDistance2D(new LatLong(missionArr.get(0).latitude, missionArr.get(0).longitude), new LatLong(missionArr.get(1).latitude, missionArr.get(1).longitude));
+
+        for (int i = 2; i < missionCount; i++) {
+            if (i % 4 == 2 || i % 4 == 3) {
+                if (i % 4 == 2) {
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
+                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) + 90, mPathWidth);
+                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                } else if (i % 4 == 3) {
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
+                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) + 90, lineDistance);
+                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                }
+            } else if (i % 4 == 0 || i % 4 == 1) {
+                if (i % 4 == 0) {
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
+                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) - 90, mPathWidth);
+                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                } else if (i % 4 == 1) {
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
+                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) - 90, lineDistance);
+                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                }
             }
         }
-        //Log.d("PolylineLog", latlngsAForPolylineAL.toString());
-
-        polylineABmission.setCoords(latlngsAllForPolylineAL);
+        polylineABmission.setCoords(missionArr);
         polylineABmission.setColor(Color.WHITE);
         polylineABmission.setCapType(PolylineOverlay.LineCap.Round);
         polylineABmission.setJoinType(PolylineOverlay.LineJoin.Round);
@@ -981,8 +978,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             markerA.setMap(naverMap);
             aFlag = true;
             preMarkers.setMap(null);
-            latlngsAForPolylineAL.add(markerA.getPosition());
             btnSetAB.setText("SET B");
+            missionArr.add(preMarkerLatlng);
         } else if (bFlag == false && aFlag == true) {
             markerB.setPosition(preMarkerLatlng);
             markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
@@ -990,8 +987,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             markerB.setMap(naverMap);
             bFlag = true;
             preMarkers.setMap(null);
-            latlngsBForPolylineAL.add(markerB.getPosition());
             btnSetMission.setText("SEND\nMISSION");
+            missionArr.add(preMarkerLatlng);
             MissionABPolyline();
             btnSetAB.setVisibility(View.INVISIBLE);
             btnSetMission.setVisibility(View.VISIBLE);
@@ -1001,11 +998,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     public void MissionAB(View view) {
         if (missionSentFlag == false && missionStartFlag == false) {
             //Todo: send mission to Drone
-            Waypoint waypointforMission = new Waypoint();
             Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
-            for (int i = 0; i < latlngsAllForPolylineAL.size(); i++) {
-                waypointforMission.setCoordinate(new LatLongAlt(latlngsAllForPolylineAL.get(i).latitude, latlngsAllForPolylineAL.get(i).longitude, droneAltitude.getAltitude()));
-                waypointforMission.setDelay(1.0);
+            for (int i = 0; i < missionArr.size(); i++) {
+                Waypoint waypointforMission = new Waypoint();
+                waypointforMission.setCoordinate(new LatLongAlt(missionArr.get(i).latitude, missionArr.get(i).longitude, droneAltitude.getAltitude()));
+                waypointforMission.setDelay(1);
                 mission.addMissionItem(waypointforMission);
             }
             MissionApi.getApi(this.drone).setMission(mission, true);
@@ -1037,7 +1034,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 @Override
                 public void onSuccess() {
                     alertUser("Mission paused");
-                    ChangeToLoiterMode();
+                    changeToLoiterMode();
                     btnSetMission.setText("Start\nMission");
                     missionStartFlag = false;
                 }
@@ -1063,19 +1060,100 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         markerA.setMap(null);
         markerB.setMap(null);
         preMarkers.setMap(null);
-        latlngsAForPolylineAL.clear();
-        latlngsBForPolylineAL.clear();
-        latlngsAllForPolylineAL.clear();
-        polylineABmission.setMap(null);
 
-        polyline.setMap(null);
+        polylineABmission.setMap(null);
+        missionArr.clear();
     }
-    //조난자 위치 좌표
-//      public void markerOfCastaway() {
-//        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
-//        LatLong vehiclePosition = droneGps.getPosition();
-//        if (aFlag == false && bFlag == false) {
-//            markerA.setPosition(castToNaverCoord(vehiclePosition));
+
+    public void guidedHomeBtn(View view) {
+        State checkVehicleState = drone.getAttribute(AttributeType.STATE);
+        VehicleMode checkVehicleMode = checkVehicleState.getVehicleMode();
+
+        if (checkVehicleMode == VehicleMode.COPTER_GUIDED) {
+            homeMarker.setMap(null);
+            homeMarker.setIconTintColor(Color.YELLOW);
+            homeMarker.setPosition(homePositionN);
+            homeMarker.setWidth(30);
+            homeMarker.setHeight(30);
+            homeMarker.setMap(naverMap);
+            goHomePoint();
+
+        } else {
+            AlertDialog.Builder guidedDialog = new AlertDialog.Builder(MainActivity.this);
+            guidedDialog.setTitle(null);
+            guidedDialog.setMessage("현재고도를 유지하며 목표지점까지 기체가 이동합니다.");
+            guidedDialog.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    homeMarker.setMap(null);
+                    homeMarker.setIconTintColor(Color.YELLOW);
+                    homeMarker.setPosition(homePositionN);
+                    homeMarker.setWidth(30);
+                    homeMarker.setHeight(30);
+                    homeMarker.setMap(naverMap);
+
+
+                    changeToGuidedMode();
+                    goHomePoint();
+
+                }
+            });
+            guidedDialog.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            guidedDialog.show();
+        }
+    }
+
+    private void goHomePoint() {
+
+        ControlApi.getApi(this.drone).goTo(homePositionG, true, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Drone made it home safely");
+                checkReturnHome = true;
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("error to get drone back home");
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("timed out to get drone back home");
+            }
+        });
+
+    }
+
+    public boolean checkBackHome() {
+        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+        LatLong vehiclePosition = droneGps.getPosition();
+        return homePositionN.distanceTo(castToLatLng(vehiclePosition)) <= 1;
+    }
+
+    private void changeToLandMode() {
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_LAND, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("change successful to Land-Mode.");
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Unable to change to Land-Mode.");
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Changing to Land-Mode timed out.");
+            }
+        });
+    }
 
     @Override
     public void onDroneServiceInterrupted(String errorMsg) {
