@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private LatLng homePositionN;
     private Boolean checkReturnHome = false;
     private Marker homeMarker = new Marker();
-    private ArrayList<LatLng> missionArr = new ArrayList<>();
+    private ArrayList<LatLng> ABmissionArr = new ArrayList<>();
 
 
     @Override
@@ -930,40 +930,39 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
-
     public void MissionABPolyline() {
         int missionCount = (int) (mPathDistance / mPathWidth) * 2 + 2;
 
-        double lineDistance = mathUtils.getDistance2D(new LatLong(missionArr.get(0).latitude, missionArr.get(0).longitude), new LatLong(missionArr.get(1).latitude, missionArr.get(1).longitude));
+        double lineDistance = mathUtils.getDistance2D(new LatLong(ABmissionArr.get(0).latitude, ABmissionArr.get(0).longitude), new LatLong(ABmissionArr.get(1).latitude, ABmissionArr.get(1).longitude));
 
         for (int i = 2; i < missionCount; i++) {
             if (i % 4 == 2 || i % 4 == 3) {
                 if (i % 4 == 2) {
-                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
-                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
-                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) + 90, mPathWidth);
-                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(ABmissionArr.get(i - 2).latitude, ABmissionArr.get(i - 2).longitude),
+                                    new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude)) + 90, mPathWidth);
+                    ABmissionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
                 } else if (i % 4 == 3) {
-                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
-                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
-                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) + 90, lineDistance);
-                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(ABmissionArr.get(i - 2).latitude, ABmissionArr.get(i - 2).longitude),
+                                    new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude)) + 90, lineDistance);
+                    ABmissionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
                 }
             } else if (i % 4 == 0 || i % 4 == 1) {
                 if (i % 4 == 0) {
-                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
-                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
-                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) - 90, mPathWidth);
-                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(ABmissionArr.get(i - 2).latitude, ABmissionArr.get(i - 2).longitude),
+                                    new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude)) - 90, mPathWidth);
+                    ABmissionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
                 } else if (i % 4 == 1) {
-                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude),
-                            mathUtils.getHeadingFromCoordinates(new LatLong(missionArr.get(i - 2).latitude, missionArr.get(i - 2).longitude),
-                                    new LatLong(missionArr.get(i - 1).latitude, missionArr.get(i - 1).longitude)) - 90, lineDistance);
-                    missionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
+                    LatLong latLong = mathUtils.newCoordFromBearingAndDistance(new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude),
+                            mathUtils.getHeadingFromCoordinates(new LatLong(ABmissionArr.get(i - 2).latitude, ABmissionArr.get(i - 2).longitude),
+                                    new LatLong(ABmissionArr.get(i - 1).latitude, ABmissionArr.get(i - 1).longitude)) - 90, lineDistance);
+                    ABmissionArr.add(i, new LatLng(latLong.getLatitude(), latLong.getLongitude()));
                 }
             }
         }
-        polylineABmission.setCoords(missionArr);
+        polylineABmission.setCoords(ABmissionArr);
         polylineABmission.setColor(Color.WHITE);
         polylineABmission.setCapType(PolylineOverlay.LineCap.Round);
         polylineABmission.setJoinType(PolylineOverlay.LineJoin.Round);
@@ -979,7 +978,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             aFlag = true;
             preMarkers.setMap(null);
             btnSetAB.setText("SET B");
-            missionArr.add(preMarkerLatlng);
+            ABmissionArr.add(preMarkerLatlng);
         } else if (bFlag == false && aFlag == true) {
             markerB.setPosition(preMarkerLatlng);
             markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
@@ -988,7 +987,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             bFlag = true;
             preMarkers.setMap(null);
             btnSetMission.setText("SEND\nMISSION");
-            missionArr.add(preMarkerLatlng);
+            ABmissionArr.add(preMarkerLatlng);
             MissionABPolyline();
             btnSetAB.setVisibility(View.INVISIBLE);
             btnSetMission.setVisibility(View.VISIBLE);
@@ -997,11 +996,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     public void MissionAB(View view) {
         if (missionSentFlag == false && missionStartFlag == false) {
-            //Todo: send mission to Drone
+            //Todo: send mission to Drone. remember: altitude is up to drone's state.
             Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
-            for (int i = 0; i < missionArr.size(); i++) {
+            for (int i = 0; i < ABmissionArr.size(); i++) {
                 Waypoint waypointforMission = new Waypoint();
-                waypointforMission.setCoordinate(new LatLongAlt(missionArr.get(i).latitude, missionArr.get(i).longitude, droneAltitude.getAltitude()));
+                waypointforMission.setCoordinate(new LatLongAlt(ABmissionArr.get(i).latitude, ABmissionArr.get(i).longitude, droneAltitude.getAltitude()));
                 waypointforMission.setDelay(1);
                 mission.addMissionItem(waypointforMission);
             }
@@ -1062,7 +1061,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         preMarkers.setMap(null);
 
         polylineABmission.setMap(null);
-        missionArr.clear();
+        ABmissionArr.clear();
     }
 
     public void guidedHomeBtn(View view) {
