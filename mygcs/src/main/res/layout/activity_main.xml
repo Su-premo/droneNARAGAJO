@@ -243,6 +243,7 @@
                     android:id="@+id/guidedHomeBtn"
                     android:layout_width="89dp"
                     android:layout_height="38dp"
+                    android:onClick="guidedHomeBtn"
                     android:text="Return home"
                     android:textSize="8dp"
                     app:layout_constraintBottom_toBottomOf="parent"

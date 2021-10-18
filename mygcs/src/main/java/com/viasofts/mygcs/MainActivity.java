@@ -152,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Marker markerA = new Marker();
     private Marker markerB = new Marker();
     private LatLng preMarkerLatlng;
+    private Boolean missionABflag = false;
     private Boolean aFlag = false;
     private Boolean bFlag = false;
     private Button btnSetAB;
@@ -860,6 +861,16 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
+    // Tap A-B button: the button for setting A,B markers and the missions show up
+    public void buttonAB(View view) {
+        if (btnSetAB.getVisibility() == View.INVISIBLE) {
+            btnSetAB.setVisibility(View.VISIBLE);
+            btnMission.setText("A-B");
+            btnSetAB.setText("Set A");
+            missionABflag = true;
+        }
+    }
+
     public void MissionUndo(View view) {
         mission.clear();
         btnMission.setText("Mission");
@@ -867,15 +878,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         aFlag = false;
         bFlag = false;
         resetOverlaysBtn(view);
-    }
-
-    // Tap A-B button: the button for setting A,B markers and the missions show up
-    public void buttonAB(View view) {
-        if (btnSetAB.getVisibility() == View.INVISIBLE) {
-            btnSetAB.setVisibility(View.VISIBLE);
-            btnMission.setText("A-B");
-            btnSetAB.setText("Set A");
-        }
     }
 
     // Buttons to set flight path distance
@@ -969,30 +971,30 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         polylineABmission.setMap(naverMap);
     }
 
-    public void setAbMarkerVersion(View view) {
-        if (aFlag == false && bFlag == false) {
-            markerA.setPosition(preMarkerLatlng);
-            markerA.setIcon(OverlayImage.fromResource(R.drawable.xbox_a));
-            markerA.setAnchor(new PointF(0.5f, 0.5f));
-            markerA.setMap(naverMap);
-            aFlag = true;
-            preMarkers.setMap(null);
-            btnSetAB.setText("SET B");
-            ABmissionArr.add(preMarkerLatlng);
-        } else if (bFlag == false && aFlag == true) {
-            markerB.setPosition(preMarkerLatlng);
-            markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
-            markerB.setAnchor(new PointF(0.5f, 0.5f));
-            markerB.setMap(naverMap);
-            bFlag = true;
-            preMarkers.setMap(null);
-            btnSetMission.setText("SEND\nMISSION");
-            ABmissionArr.add(preMarkerLatlng);
-            MissionABPolyline();
-            btnSetAB.setVisibility(View.INVISIBLE);
-            btnSetMission.setVisibility(View.VISIBLE);
-        }
-    }
+//    public void setAbMarkerVersion(View view) {
+//        if (aFlag == false && bFlag == false) {
+//            markerA.setPosition(preMarkerLatlng);
+//            markerA.setIcon(OverlayImage.fromResource(R.drawable.xbox_a));
+//            markerA.setAnchor(new PointF(0.5f, 0.5f));
+//            markerA.setMap(naverMap);
+//            aFlag = true;
+//            preMarkers.setMap(null);
+//            btnSetAB.setText("SET B");
+//            ABmissionArr.add(preMarkerLatlng);
+//        } else if (bFlag == false && aFlag == true) {
+//            markerB.setPosition(preMarkerLatlng);
+//            markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
+//            markerB.setAnchor(new PointF(0.5f, 0.5f));
+//            markerB.setMap(naverMap);
+//            bFlag = true;
+//            preMarkers.setMap(null);
+//            btnSetMission.setText("SEND\nMISSION");
+//            ABmissionArr.add(preMarkerLatlng);
+//            MissionABPolyline();
+//            btnSetAB.setVisibility(View.INVISIBLE);
+//            btnSetMission.setVisibility(View.VISIBLE);
+//        }
+//    }
 
     public void MissionAB(View view) {
         if (missionSentFlag == false && missionStartFlag == false) {
@@ -1210,12 +1212,37 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             GuidedModeLC();
         });
 
+//        naverMap.setOnMapClickListener((point, LatLng) -> {
+//            preMarkers.setPosition(LatLng);
+//            preMarkers.setWidth(50);
+//            preMarkers.setHeight(50);
+//            preMarkers.setMap(naverMap);
+//            preMarkerLatlng = LatLng;
+//        });
+
         naverMap.setOnMapClickListener((point, LatLng) -> {
-            preMarkers.setPosition(LatLng);
-            preMarkers.setWidth(50);
-            preMarkers.setHeight(50);
-            preMarkers.setMap(naverMap);
-            preMarkerLatlng = LatLng;
+            if (missionABflag == true) {
+                markerA.setPosition(LatLng);
+                markerA.setIcon(OverlayImage.fromResource(R.drawable.xbox_a));
+                markerA.setAnchor(new PointF(0.5f, 0.5f));
+                markerA.setMap(naverMap);
+                aFlag = true;
+                //preMarkers.setMap(null);
+                btnSetAB.setText("SET B");
+                ABmissionArr.add(LatLng);
+            } else if (missionABflag == true && aFlag == true) {
+                markerB.setPosition(LatLng);
+                markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
+                markerB.setAnchor(new PointF(0.5f, 0.5f));
+                markerB.setMap(naverMap);
+                bFlag = true;
+                //preMarkers.setMap(null);
+                btnSetMission.setText("SEND\nMISSION");
+                ABmissionArr.add(LatLng);
+                MissionABPolyline();
+                btnSetAB.setVisibility(View.INVISIBLE);
+                btnSetMission.setVisibility(View.VISIBLE);
+            }
         });
     }
 
