@@ -53,6 +53,8 @@ import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
+import com.o3dr.services.android.lib.drone.companion.solo.SoloAttributes;
+import com.o3dr.services.android.lib.drone.companion.solo.SoloState;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
 import com.o3dr.services.android.lib.drone.mission.Mission;
@@ -99,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
     private NaverMap naverMap;
-    private Marker markerTemp = new Marker();
 
     private Button btnConnect;
     private Button mBtnSetConnectionType;
@@ -148,14 +149,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Button btnMission;
     private Button btnMissionAB;
     private Button btnMissionUndo;
-    private Marker preMarkers = new Marker();
     private Marker markerA = new Marker();
     private Marker markerB = new Marker();
-    private LatLng preMarkerLatlng;
     private Boolean missionABflag = false;
     private Boolean aFlag = false;
     private Boolean bFlag = false;
-    private Button btnSetAB;
     private PolylineOverlay polylineABmission = new PolylineOverlay();
 
     private MathUtils mathUtils = new MathUtils();
@@ -273,7 +271,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         btnMissionAB = (Button) findViewById(R.id.btnAB);
         btnMissionUndo = (Button) findViewById(R.id.btnMissionUndo);
         btnSetMission = (Button) findViewById(R.id.btnSetMission);
-        btnSetAB = (Button) findViewById(R.id.btnSetAB);
     }
 
     @Override
@@ -520,14 +517,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         return idx;
     }
 
-//    private void checkSoloState() {
-//        final SoloState soloState = drone.getAttribute(SoloAttributes.SOLO_STATE);
-//        if (soloState == null) {
-//            alertUser("Unable to retrieve the solo state.");
-//        } else {
-//            alertUser("Solo state is up to date.");
-//        }
-//    }
+    private void checkSoloState() {
+        final SoloState soloState = drone.getAttribute(SoloAttributes.SOLO_STATE);
+        if (soloState == null) {
+            alertUser("Unable to retrieve the solo state.");
+        } else {
+            alertUser("Solo state is up to date.");
+        }
+    }
 
     // Arm Button
     public void onArmButtonTap(View view) {
@@ -863,12 +860,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     // Tap A-B button: the button for setting A,B markers and the missions show up
     public void buttonAB(View view) {
-        if (btnSetAB.getVisibility() == View.INVISIBLE) {
-            btnSetAB.setVisibility(View.VISIBLE);
-            btnMission.setText("A-B");
-            btnSetAB.setText("Set A");
-            missionABflag = true;
-        }
+        missionABflag = true;
     }
 
     public void MissionUndo(View view) {
@@ -971,31 +963,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         polylineABmission.setMap(naverMap);
     }
 
-//    public void setAbMarkerVersion(View view) {
-//        if (aFlag == false && bFlag == false) {
-//            markerA.setPosition(preMarkerLatlng);
-//            markerA.setIcon(OverlayImage.fromResource(R.drawable.xbox_a));
-//            markerA.setAnchor(new PointF(0.5f, 0.5f));
-//            markerA.setMap(naverMap);
-//            aFlag = true;
-//            preMarkers.setMap(null);
-//            btnSetAB.setText("SET B");
-//            ABmissionArr.add(preMarkerLatlng);
-//        } else if (bFlag == false && aFlag == true) {
-//            markerB.setPosition(preMarkerLatlng);
-//            markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
-//            markerB.setAnchor(new PointF(0.5f, 0.5f));
-//            markerB.setMap(naverMap);
-//            bFlag = true;
-//            preMarkers.setMap(null);
-//            btnSetMission.setText("SEND\nMISSION");
-//            ABmissionArr.add(preMarkerLatlng);
-//            MissionABPolyline();
-//            btnSetAB.setVisibility(View.INVISIBLE);
-//            btnSetMission.setVisibility(View.VISIBLE);
-//        }
-//    }
-
     public void MissionAB(View view) {
         if (missionSentFlag == false && missionStartFlag == false) {
             //Todo: send mission to Drone. remember: altitude is up to drone's state.
@@ -1056,11 +1023,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     public void resetOverlaysBtn(View view) {
         markerGuideModeLC.setMap(null);
         polylineDroneAL.clear();
-        markerTemp.setMap(null);
 
         markerA.setMap(null);
         markerB.setMap(null);
-        preMarkers.setMap(null);
+        //preMarkers.setMap(null);
 
         polylineABmission.setMap(null);
         ABmissionArr.clear();
@@ -1212,35 +1178,23 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             GuidedModeLC();
         });
 
-//        naverMap.setOnMapClickListener((point, LatLng) -> {
-//            preMarkers.setPosition(LatLng);
-//            preMarkers.setWidth(50);
-//            preMarkers.setHeight(50);
-//            preMarkers.setMap(naverMap);
-//            preMarkerLatlng = LatLng;
-//        });
-
         naverMap.setOnMapClickListener((point, LatLng) -> {
-            if (missionABflag == true) {
+            if (missionABflag == true && aFlag == false && bFlag == false) {
                 markerA.setPosition(LatLng);
                 markerA.setIcon(OverlayImage.fromResource(R.drawable.xbox_a));
                 markerA.setAnchor(new PointF(0.5f, 0.5f));
                 markerA.setMap(naverMap);
                 aFlag = true;
-                //preMarkers.setMap(null);
-                btnSetAB.setText("SET B");
                 ABmissionArr.add(LatLng);
-            } else if (missionABflag == true && aFlag == true) {
+            } else if (missionABflag == true && aFlag == true & bFlag == false) {
                 markerB.setPosition(LatLng);
                 markerB.setIcon(OverlayImage.fromResource(R.drawable.xbox_b));
                 markerB.setAnchor(new PointF(0.5f, 0.5f));
                 markerB.setMap(naverMap);
                 bFlag = true;
-                //preMarkers.setMap(null);
                 btnSetMission.setText("SEND\nMISSION");
                 ABmissionArr.add(LatLng);
                 MissionABPolyline();
-                btnSetAB.setVisibility(View.INVISIBLE);
                 btnSetMission.setVisibility(View.VISIBLE);
             }
         });
